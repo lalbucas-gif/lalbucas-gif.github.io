@@ -32,6 +32,8 @@ h2{font-family:var(--font-display);font-weight:600;font-size:17px;margin:0;text-
 .chip.on{background:var(--ok-bg);color:var(--ok)}
 .status.work{background:var(--bg);color:var(--muted)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:14px}
+.key-panel{background:var(--ok-bg);border:2px solid var(--accent);border-radius:12px;padding:12px;display:grid;gap:10px}
+.key-title{font-size:17px;line-height:1.3;color:var(--ink);margin:0}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:520px){.row{grid-template-columns:1fr}}
 label{display:grid;gap:5px;font-size:13px;font-weight:500;color:var(--muted)}
@@ -64,6 +66,21 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
  <section class="panel" aria-labelledby="t-exame">
   <h2 id="t-exame">Exame</h2>
+  <div class="key-panel" id="grok-config" aria-label="Configuração do Grok">
+   <h3 class="key-title">🔑 Cole sua chave do Grok aqui</h3>
+  <div class="row">
+   <label for="api-key">Chave da xAI / Grok
+    <input id="api-key" type="password" autocomplete="off" placeholder="xai-..." spellcheck="false">
+   </label>
+   <label for="modelo">Modelo
+    <select id="modelo">
+     <option value="rapido">Rápido (Grok 4.3)</option>
+     <option value="caprichado">Alta capacidade (Grok 4.7)</option>
+    </select>
+   </label>
+  </div>
+  <label class="check" for="api-autorizado"><input type="checkbox" id="api-autorizado"> Confirmo que minha conta xAI tem créditos disponíveis e faturamento adicional desabilitado. Entendo que cada geração consome créditos.</label>
+  </div>
   <div class="row">
    <label for="rota">Exame
     <select id="rota">
@@ -99,18 +116,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
   <label for="ditado">Ditado
    <textarea id="ditado" placeholder="Ex.: apêndice com calibre aumentado e densificação da gordura periapendicular."></textarea>
   </label>
-  <div class="row">
-   <label for="api-key">Chave da xAI / Grok
-    <input id="api-key" type="password" autocomplete="off" placeholder="xai-..." spellcheck="false">
-   </label>
-   <label for="modelo">Modelo
-    <select id="modelo">
-     <option value="rapido">Rápido (Grok 4.3)</option>
-     <option value="caprichado">Alta capacidade (Grok 4.7)</option>
-    </select>
-   </label>
-  </div>
-  <label class="check" for="api-autorizado"><input type="checkbox" id="api-autorizado"> Confirmo que minha conta xAI tem créditos disponíveis e faturamento adicional desabilitado. Entendo que cada geração consome créditos.</label>
+
   <div class="actions">
    <button class="primary" id="btn-ia" disabled>Gerar laudo pelo ditado</button>
    <button id="btn-parar" class="hidden">Parar</button>
