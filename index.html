@@ -100,24 +100,24 @@ button:disabled{opacity:.5;cursor:not-allowed}
    <textarea id="ditado" placeholder="Ex.: apêndice com calibre aumentado e densificação da gordura periapendicular."></textarea>
   </label>
   <div class="row">
-   <label for="api-key">Chave da API
-    <input id="api-key" type="password" autocomplete="off" placeholder="sk-ant-...">
+   <label for="api-key">Chave da xAI / Grok
+    <input id="api-key" type="password" autocomplete="off" placeholder="xai-..." spellcheck="false">
    </label>
    <label for="modelo">Modelo
     <select id="modelo">
-     <option value="rapido">Rápido (Sonnet 5.5)</option>
-     <option value="caprichado">Caprichado (Opus 5.5)</option>
+     <option value="rapido">Rápido (Grok 4.3)</option>
+     <option value="caprichado">Alta capacidade (Grok 4.7)</option>
     </select>
    </label>
   </div>
-  <label class="check" for="api-lembrar"><input type="checkbox" id="api-lembrar"> Lembrar a chave neste navegador (não marque em computador compartilhado)</label>
+  <label class="check" for="api-autorizado"><input type="checkbox" id="api-autorizado"> Confirmo que minha conta xAI tem créditos disponíveis e faturamento adicional desabilitado. Entendo que cada geração consome créditos.</label>
   <div class="actions">
    <button class="primary" id="btn-ia" disabled>Gerar laudo pelo ditado</button>
    <button id="btn-parar" class="hidden">Parar</button>
    <button id="btn-normal">Normal rápido</button>
    <button id="btn-exemplo">Ver exemplo</button>
   </div>
-  <p class="hint">Dite pelo microfone do teclado ou com Windows + H. A IA transforma o ditado em achados sobre a máscara do exame, e o motor monta, aplica o negrito e valida o laudo antes de mostrar. "Normal rápido" sai na hora, sem IA. A chave fica só neste navegador e o ditado vai direto para a API, sem passar por outro servidor.</p>
+  <p class="hint">Dite pelo microfone do teclado ou com Windows + H. A IA transforma o ditado em achados sobre a máscara do exame, e o motor monta, aplica o negrito e valida o laudo antes de mostrar. "Normal rápido" sai na hora, sem IA. A chave é usada somente nesta sessão: enviada por HTTPS à ponte de conexão e então à xAI, sem ser gravada no site. A xAI recebe o texto do ditado. Não inclua dados identificáveis de pacientes.</p>
  </section>
 
  <section class="panel" aria-labelledby="t-laudo">
@@ -1392,9 +1392,9 @@ Corrija e devolva o JSON completo.`:''}`;
    navigator.clipboard.write([item]).then(()=>flash(b,'Copiado')).catch(()=>{fallbackCopy($('preview'));flash(b,'Copiado');});
   }catch(e){fallbackCopy($('preview'));flash(b,'Copiado');}
  });
- // IA pela API: o navegador fala direto com api.anthropic.com usando a chave do usuário. Sem servidor intermediário.
- const API_URL='https://api.anthropic.com/v1/messages';
- const MODELOS={rapido:'claude-sonnet-5-5',caprichado:'claude-opus-5-5'};
+ // Conexão com a xAI por ponte HTTPS; a chave pertence ao usuário e não é armazenada.
+ const API_URL='https://radiologia-grok-relay.lalbucas.chatgpt.site/api/grok';
+ const MODELOS={rapido:'grok-4.3',caprichado:'grok-4.7'};
  function extrairJSON(t){
   t=String(t||'').trim();
   try{return JSON.parse(t);}catch(e){}
@@ -1406,30 +1406,30 @@ Corrija e devolva o JSON completo.`:''}`;
   return {json:async(prompt,opts={})=>{
    let r;
    try{
-    r=await fetch(API_URL,{method:'POST',signal:opts.signal,headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-     body:JSON.stringify({model:MODELOS[$('modelo').value]||MODELOS.rapido,max_tokens:4000,messages:[{role:'user',content:prompt+'\n\nResponda apenas com o JSON pedido.'}]})});
+    r=await fetch(API_URL,{method:'POST',signal:opts.signal,headers:{'content-type':'application/json','authorization':'Bearer '+key},
+     body:JSON.stringify({model:MODELOS[$('modelo').value]||MODELOS.rapido,prompt})});
    }catch(e){if(e&&e.name==='AbortError')throw {code:'cancelled'};throw {code:'network'};}
-   if(r.status===401||r.status===403)throw {code:'invalid_key'};
-   if(r.status===429||r.status===529)throw {code:'rate_limited'};
+   if(r.status===401)throw {code:'invalid_key'};
+   if(r.status===403)throw {code:'network'};
+   if(r.status===429)throw {code:'rate_limited'};
    if(!r.ok)throw {code:'upstream_error',status:r.status};
    const d=await r.json();
-   const txt=(d.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+   const txt=d.text||'';
    opts.onText&&opts.onText({text:txt,delta:txt});
    return extrairJSON(txt);
   }};
  }
- function lerChave(){try{return localStorage.getItem('lalbucas-chave')||'';}catch(e){return '';}}
  function ligarIA(){
   const k=$('api-key').value.trim();
-  try{if($('api-lembrar').checked&&k)localStorage.setItem('lalbucas-chave',k);else localStorage.removeItem('lalbucas-chave');}catch(e){}
-  if(!k){iaOff();return;}
-  sample=apiCliente(k);$('btn-ia').disabled=false;const c=$('ia-chip');c.classList.add('on');c.textContent='IA ligada';
+  const autorizado=$('api-autorizado').checked;
+  if(!/^xai-[A-Za-z0-9_-]{8,}$/.test(k)||!autorizado){iaOff();return;}
+  sample=apiCliente(k);$('btn-ia').disabled=false;const c=$('ia-chip');c.classList.add('on');c.textContent='Grok pronto';
  }
  $('api-key').addEventListener('input',ligarIA);
- $('api-lembrar').addEventListener('change',ligarIA);
+ $('api-autorizado').addEventListener('change',ligarIA);
+ try{localStorage.removeItem('lalbucas-chave');}catch(e){}
  syncFields();
  exemplo();
- $('api-key').value=lerChave();$('api-lembrar').checked=!!lerChave();
  ligarIA();
 })();
 </script>
