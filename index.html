@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
- /* layout: uma coluna de trabalho — exame em cima, laudo validado embaixo, como na estação de laudo */
+ /* layout: uma coluna de trabalho — ditado em cima, laudo validado embaixo, como na estação de laudo */
  --bg:#eef1f5; --panel:#ffffff; --ink:#18202b; --muted:#5b6778; --line:#d5dbe4;
  --accent:#1d5fb8; --accent-ink:#ffffff; --warn:#9a5b00; --warn-bg:#fdf1dd; --ok:#1d7a46; --ok-bg:#e3f4ea; --err:#b3261e; --err-bg:#fbe7e5;
  --font-display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
@@ -39,6 +39,8 @@ select,input,textarea{font:inherit;color:var(--ink);background:var(--bg);border:
 textarea{min-height:92px;resize:vertical}
 select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hidden{display:none}
+.check{display:flex;align-items:center;gap:8px;font-weight:400}
+.check input{width:auto}
 .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 button{font:inherit;font-weight:500;border-radius:8px;padding:10px 14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -57,6 +59,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 <div class="wrap">
  <header>
   <h1>Lalbucas</h1>
+  <span class="chip" id="ia-chip">IA desligada: falta a chave</span>
  </header>
 
  <section class="panel" aria-labelledby="t-exame">
@@ -71,12 +74,16 @@ button:disabled{opacity:.5;cursor:not-allowed}
      <option value="us-doppler-venoso-mmii-full">Doppler venoso de MMII (TVP)</option>
      <option value="rm-cranium-full">RM de crânio</option>
      <option value="rm-pelvis-endo-full">RM de pelve (endometriose)</option>
+     <option value="livre">Outro exame (IA monta o laudo inteiro)</option>
     </select>
    </label>
    <label for="indicacao">Indicação
     <input id="indicacao" value="dor abdominal.">
    </label>
   </div>
+  <label for="exame-livre" id="livre-wrap" class="hidden">Qual exame
+   <input id="exame-livre" placeholder="Ex.: TC de coluna lombar, US de tireoide, RM de joelho direito">
+  </label>
   <div class="row" id="row-extra">
    <label for="lateralidade" id="lat-wrap" class="hidden">Lateralidade
     <select id="lateralidade">
@@ -89,18 +96,36 @@ button:disabled{opacity:.5;cursor:not-allowed}
     <input id="tecnica" value="estudo por ressonância magnética do crânio.">
    </label>
   </div>
-  <div class="actions">
-   <button class="primary" id="btn-normal">Gerar laudo normal</button>
+  <label for="ditado">Ditado
+   <textarea id="ditado" placeholder="Ex.: apêndice com calibre aumentado e densificação da gordura periapendicular."></textarea>
+  </label>
+  <div class="row">
+   <label for="api-key">Chave da API
+    <input id="api-key" type="password" autocomplete="off" placeholder="sk-ant-...">
+   </label>
+   <label for="modelo">Modelo
+    <select id="modelo">
+     <option value="rapido">Rápido (Sonnet 5.5)</option>
+     <option value="caprichado">Caprichado (Opus 5.5)</option>
+    </select>
+   </label>
   </div>
-  <p class="hint">O laudo é montado e validado neste navegador. Nada é enviado para fora.</p>
+  <label class="check" for="api-lembrar"><input type="checkbox" id="api-lembrar"> Lembrar a chave neste navegador (não marque em computador compartilhado)</label>
+  <div class="actions">
+   <button class="primary" id="btn-ia" disabled>Gerar laudo pelo ditado</button>
+   <button id="btn-parar" class="hidden">Parar</button>
+   <button id="btn-normal">Normal rápido</button>
+   <button id="btn-exemplo">Ver exemplo</button>
+  </div>
+  <p class="hint">Dite pelo microfone do teclado ou com Windows + H. A IA transforma o ditado em achados sobre a máscara do exame, e o motor monta, aplica o negrito e valida o laudo antes de mostrar. "Normal rápido" sai na hora, sem IA. A chave fica só neste navegador e o ditado vai direto para a API, sem passar por outro servidor.</p>
  </section>
 
  <section class="panel" aria-labelledby="t-laudo">
   <div class="actions" style="justify-content:space-between">
    <h2 id="t-laudo">Laudo</h2>
-   <span class="tag" id="origem">Normal</span>
+   <span class="tag" id="origem">Exemplo</span>
   </div>
-  <div class="status ok" id="status">Validado: formato RIS e cobertura de compartimentos OK.</div>
+  <div class="status ok" id="status">Validado pelo motor: formato RIS e cobertura de compartimentos OK.</div>
   <div class="paper" id="preview"></div>
   <div class="copy">
    <button id="btn-html">Copiar HTML</button>
@@ -1152,32 +1177,207 @@ return Object.freeze({...api,...createClinicalEntry(api)});
 </script>
 <script>
 (function(){
- let core=null, html='';
+ let core=null, html='', sample=null, ctl=null;
  const $=id=>document.getElementById(id);
- const ERROS={normal_route_unsupported:'exame sem máscara',doppler_laterality_required:'escolha a lateralidade',mri_technique_required:'preencha a técnica da RM'};
- function setStatus(ok,msg){const s=$('status');s.className='status '+(ok?'ok':'err');s.textContent=msg;}
- try{core=Function('return '+$('motor').textContent)();}catch(e){setStatus(false,'Não carregou: '+e.message);}
+ const NOMES={'abdomen-full':'TC de abdome superior e pelve','ct-chest-full':'TC de tórax','ct-cranium-full':'TC de crânio','us-abdomen-full':'US de abdome total','us-doppler-venoso-mmii-full':'Doppler venoso de membros inferiores (pesquisa de TVP)','rm-cranium-full':'RM de crânio','rm-pelvis-endo-full':'RM de pelve (endometriose)'};
+ const ERROS={normal_route_unsupported:'exame sem máscara no motor',doppler_laterality_required:'escolha a lateralidade',mri_technique_required:'preencha a técnica da RM',positive_route_mask_unavailable:'achados positivos ainda não suportados para este exame no motor',positive_changes_required:'a IA não indicou nenhum bloco alterado',positive_conclusion_required:'a IA não escreveu a conclusão'};
+ function setStatus(kind,msg){const s=$('status');s.className='status '+kind;s.textContent=msg;}
+ try{core=Function('return '+$('motor').textContent)();}catch(e){setStatus('err','Motor não carregou: '+e.message);}
+ const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
  const ponto=s=>{s=String(s||'').trim();if(!s)return s;s=s.charAt(0).toLowerCase()+s.slice(1);return /[.!?]$/.test(s)?s:s+'.';};
+ function show(report,origem){html=report.slice(8,-4);$('preview').innerHTML=html;$('origem').textContent=origem;setStatus('ok','Validado pelo motor: formato RIS e cobertura de compartimentos OK.');}
+ function msgErro(e){const c=String(e&&e.message||e);if(ERROS[c])return ERROS[c];
+  const falta=c.split(',').map(x=>(x.match(/full_mask_missing_(\w+)/)||[])[1]).filter(Boolean);
+  return falta.length?'faltou a menção obrigatória a '+falta.join(', ').replace(/_/g,' ')+' (mantenha a parte normal desse compartimento)':c;}
+ function baseQuery(){
+  const r=$('rota').value;
+  const q={id:'caso-'+Date.now(),route:r,indication:ponto($('indicacao').value)||'não informada.'};
+  if(r==='us-doppler-venoso-mmii-full')q.laterality=$('lateralidade').value;
+  if(r==='rm-cranium-full')q.technique=ponto($('tecnica').value);
+  return q;
+ }
+ // Substitui TÉCNICA/COMPARAÇÃO quando o ditado informa e revalida o RIS inteiro no motor.
+ function ajustarCampos(report,tec,comp){
+  let r=report;
+  if(tec)r=r.replace(/(<b>TÉCNICA:<\/b> )[^<]*/,'$1'+esc(ponto(tec)));
+  if(comp)r=r.replace(/(<b>COMPARAÇÃO:<\/b> )[^<]*/,'$1'+esc(ponto(comp)));
+  const v=core.validate(r);if(v.length)throw Error('formato: '+v.join(', '));
+  return r;
+ }
  function syncFields(){
   const r=$('rota').value;
+  $('livre-wrap').classList.toggle('hidden',r!=='livre');
+  $('btn-normal').disabled=r==='livre';
   $('lat-wrap').classList.toggle('hidden',r!=='us-doppler-venoso-mmii-full');
   $('tec-wrap').classList.toggle('hidden',r!=='rm-cranium-full');
   $('row-extra').classList.toggle('hidden',r!=='us-doppler-venoso-mmii-full'&&r!=='rm-cranium-full');
  }
- function gerar(){
-  if(!core)return;
-  const r=$('rota').value;
-  const q={id:'caso-'+Date.now(),route:r,indication:ponto($('indicacao').value)||'não informada.',normalEvidence:'normal'};
-  if(r==='us-doppler-venoso-mmii-full')q.laterality=$('lateralidade').value;
-  if(r==='rm-cranium-full')q.technique=ponto($('tecnica').value);
-  try{
-   html=core.renderNormal(q).slice(8,-4);
-   $('preview').innerHTML=html;
-   setStatus(true,'Validado: formato RIS e cobertura de compartimentos OK.');
-  }catch(e){const c=String(e&&e.message||e);setStatus(false,'Bloqueado: '+(ERROS[c]||c)+'.');}
- }
  $('rota').addEventListener('change',syncFields);
- $('btn-normal').addEventListener('click',gerar);
+ $('btn-normal').addEventListener('click',()=>{
+  if(!core||$('rota').value==='livre')return;
+  try{show(core.renderNormal({...baseQuery(),normalEvidence:'normal'}),'Normal');}catch(e){setStatus('err','Bloqueado pelo motor: '+msgErro(e)+'.');}
+ });
+ // Máscara do exame lida do próprio motor (blocos da ANÁLISE e conclusão normal).
+ function mascara(q){
+  const doc=new DOMParser().parseFromString(core.renderNormal({...q,normalEvidence:'normal'}).slice(8,-4),'text/html');
+  const blocos=[],concl=[];let modo='';
+  doc.querySelectorAll('body > div > div').forEach(d=>{
+   const t=d.textContent.trim();
+   if(t==='ANÁLISE:'){modo='a';return;} if(t==='CONCLUSÃO:'){modo='c';return;}
+   if(modo==='a'&&t)blocos.push(t); else if(modo==='c'&&t)concl.push(t.replace(/^-\s*/,''));
+  });
+  return {blocos,concl};
+ }
+ function prompt(q,m,ditado,erro,anterior){
+  return `Você é o assistente de laudos radiológicos do Dr. Lucas (radiologista, Brasil). Converta o ditado em JSON para o motor RIS que monta o laudo.
+
+EXAME: ${NOMES[q.route]}${q.laterality?' — membro: '+q.laterality:''}
+INDICAÇÃO: ${q.indication}
+DITADO: """${ditado}"""
+
+MÁSCARA NORMAL DESTE EXAME (blocos da ANÁLISE, índice começando em 0):
+${m.blocos.map((b,i)=>i+': '+b).join('\n')}
+CONCLUSÃO NORMAL: ${m.concl.join(' | ')}
+
+FORMATO DA RESPOSTA (só o JSON, nada mais):
+- Exame normal sem nenhum achado: {"kind":"normal","evidence":"<termo do ditado que diz normal, ex.: normal / sem alterações>"}
+- Com achados: {"kind":"positive","changes":[{"start":5,"count":1,"kind":"finding","support":"<trecho do ditado>","blocks":[{"text":"<frase do laudo>","positive":true,"highlights":["<trecho exato do text>"]}]}],"conclusion":["<item>"]}
+- Opcional nos dois: "technique":"<só se o ditado informar contraste/fase/protocolo>", "comparison":"<só se o ditado citar exame prévio, com modalidade e data>".
+
+REGRAS:
+1. Cada change substitui os blocos start..start+count-1 da máscara pelos seus blocks. start em ordem crescente, sem sobreposição, count >= 1.
+2. No bloco substituído, mantenha literalmente o texto normal que o ditado não contradiz, num block à parte com "positive":false e "highlights":[].
+3. Achado: "positive":true; highlights = a frase-chave inteira do achado (descrição + diagnóstico), copiada exatamente do text; frases negativas de exclusão (ex.: "Não se observam sinais de perfuração...") ficam fora do highlight.
+4. Não invente: medidas, lado, contraste, fases, graus, cronicidade, etiologia ou achados que não estejam no ditado. Preserve o grau de certeza ditado (aparente, possível, provável, sugestivo, compatível, a esclarecer).
+5. Achados correlatos ficam no mesmo bloco e no mesmo item de conclusão.
+6. conclusion: itens curtos que respondem à indicação, sem repetir medidas; não começar com "Sem" nem "Achados"; nada de negrito.
+7. A máscara inteira precisa continuar coberta: ao substituir um bloco, todo compartimento dele sem achado continua descrito como normal (ex.: ao descrever o apêndice, manter a menção às alças).
+8. Português brasileiro de laudo, frases completas com ponto final. Use "periapendicular", "pré-sacral", "sequelar", "cólico/cólica" (nunca "colônico").${erro?`
+
+TENTATIVA ANTERIOR REJEITADA PELO MOTOR com o erro "${erro}". Resposta anterior: ${anterior}
+Corrija e devolva o JSON completo.`:''}`;
+ }
+ function montar(q,j){
+  if(!j||typeof j!=='object')throw Error('resposta sem JSON');
+  let r;
+  if(j.kind==='normal')r=core.renderNormal({...q,normalEvidence:String(j.evidence||'normal')});
+  else if(j.kind==='positive')r=core.renderPositive({...q,changes:j.changes,conclusion:j.conclusion,...(j.comparison?{comparison:ponto(j.comparison)}:{})});
+  else throw Error('tipo de resposta desconhecido');
+  return ajustarCampos(r,j.technique,j.kind==='normal'?j.comparison:null);
+ }
+ // Modo livre: a IA escreve o laudo inteiro; a página monta no mesmo HTML do motor e o motor valida o formato.
+ const DIV='<div style="text-align: justify; color: #000000;">';
+ const HACK='<span style="display:inline-block; min-width:100%; width:100%; font-size:1px; line-height:1px;">&#8203;</span>';
+ function negritar(texto,hs){
+  let out=esc(texto);
+  for(const h of (hs||[])){const e=esc(h);if(!e.trim())continue;if(!out.includes(e))throw Error('negrito fora do texto: "'+h+'"');out=out.replace(e,'<b>'+e+'</b>');}
+  return out;
+ }
+ function montarLivre(ind,j){
+  if(!j||typeof j!=='object')throw Error('resposta sem JSON');
+  const title=String(j.title||'').trim().toUpperCase();
+  const an=Array.isArray(j.analysis)?j.analysis.filter(b=>b&&String(b.text||'').trim()):[];
+  const co=Array.isArray(j.conclusion)?j.conclusion.map(c=>String(c).trim().replace(/^-\s*/,'')).filter(Boolean):[];
+  if(!title)throw Error('faltou o título');if(!an.length)throw Error('faltou a análise');if(!co.length)throw Error('faltou a conclusão');
+  const L=['<div style="font-family: Arial; font-size: 11pt; text-align: justify; color: #000000; background-color: #ffffff; width: 100%;">',
+   '<div style="text-align: center; font-size: 14pt; color: #000000;"><b>'+esc(title)+'</b></div>'];
+  if(j.urgent)L.push('<div style="text-align: center; color: #000000;"><i>Relatório de Urgência/Emergência</i></div>');
+  L.push('<br><br><br>',DIV+'<b>INDICAÇÃO:</b> '+esc(ind)+'</div>','<br>',DIV+'<b>TÉCNICA:</b> '+esc(ponto(j.technique)||'não informada.')+'</div>','<br>',
+   DIV+'<b>COMPARAÇÃO:</b> '+esc(ponto(j.comparison)||'exames anteriores não fornecidos para comparação.')+'</div>','<br><br><br>',DIV+'<b>ANÁLISE:</b></div>','<br>');
+  an.forEach((b,i)=>{L.push(DIV+negritar(String(b.text).trim(),b.highlights)+'</div>');if(i<an.length-1)L.push('<br>');});
+  L.push('<br><br><br>',DIV+'<b>CONCLUSÃO:</b></div>','<br>');
+  co.forEach((c,i)=>{const d=DIV+'- '+esc(c)+'</div>';if(i<co.length-1)L.push(d,'<br>');else L.push(d+HACK);});
+  L.push('</div>');
+  const fenced='```html\n'+L.join('\n')+'\n```';
+  const v=core.validate(fenced);if(v.length)throw Error('formato: '+v.join(', '));
+  return fenced;
+ }
+ function promptLivre(exame,ind,ditado,erro,anterior){
+  return `Você é o assistente de laudos radiológicos do Dr. Lucas (radiologista, Brasil). Escreva o laudo completo deste exame em JSON; a página monta o HTML do RIS.
+
+EXAME: ${exame}
+INDICAÇÃO: ${ind}
+DITADO: """${ditado}"""
+
+RESPONDA SÓ ESTE JSON:
+{"title":"<nome completo do exame em maiúsculas, ex.: TOMOGRAFIA COMPUTADORIZADA DA COLUNA LOMBAR>","urgent":true,"technique":"<técnica>","comparison":"<comparação>","analysis":[{"text":"<parágrafo de um compartimento>","highlights":["<trecho exato do text>"]}],"conclusion":["<item>"]}
+
+REGRAS:
+1. Laudo FULL: um parágrafo curto (1-2 frases) por compartimento anatômico do exame, na ordem habitual. Compartimento que o ditado não cita recebe descrição normal padrão, sem medidas.
+2. Achado ditado: descreva no compartimento certo; highlights = a frase-chave inteira do achado (descrição + diagnóstico), copiada exatamente do text; negativas de exclusão ficam fora. Compartimento normal: "highlights":[].
+3. Não invente medidas, lado, contraste, fases, sequências, transdutor, graus, cronicidade ou achados. Preserve o grau de certeza do ditado (aparente, possível, provável, sugestivo, compatível, a esclarecer).
+4. technique: só o que o ditado informar; se nada: TC "aquisições tomográficas volumétricas d[a região] realizadas sem administração de meio de contraste intravenoso."; US "exame ultrassonográfico realizado com transdutor multifrequencial."; RM "estudo por ressonância magnética d[a região]."; RX "estudo radiográfico d[a região]." Em minúsculas, terminando em ponto.
+5. comparison: exame prévio só se ditado (modalidade, região e data); senão "exames anteriores não fornecidos para comparação."
+6. urgent: true para TC, US, RX e Doppler; false para RM, salvo se o ditado disser eletivo (TC/US/RX false) ou urgência (RM true).
+7. conclusion: itens curtos que respondem à indicação, integrando achados correlatos; sem repetir medidas; não começar com "Sem" nem "Achados"; sem negrito. Exame normal: um item dizendo que o estudo está dentro dos limites da normalidade.
+8. Português brasileiro de laudo, frases completas com ponto. Use "periapendicular", "pré-sacral", "sequelar", "cólico/cólica" (nunca "colônico").${erro?`
+
+TENTATIVA ANTERIOR REJEITADA com o erro "${erro}". Resposta anterior: ${anterior}
+Corrija e devolva o JSON completo.`:''}`;
+ }
+ async function gerarLivre(){
+  const exame=$('exame-livre').value.trim(), ditado=$('ditado').value.trim(), ind=ponto($('indicacao').value)||'não informada.';
+  if(!exame){setStatus('err','Escreva qual é o exame.');return;}
+  if(!ditado){setStatus('err','Dite os achados (ou "normal").');return;}
+  ctl=new AbortController();
+  $('btn-ia').disabled=true;$('btn-parar').classList.remove('hidden');
+  setStatus('work','Pensando…');
+  const opts={signal:ctl.signal,modelTier:'default',onText:()=>setStatus('work','Escrevendo o laudo…')};
+  try{
+   let j=await sample.json(promptLivre(exame,ind,ditado),opts);
+   try{show(montarLivre(ind,j),'Gerado pelo ditado');setStatus('ok','Formato RIS validado. Exame sem máscara no motor: confira se todos os compartimentos estão no laudo.');}
+   catch(e1){
+    setStatus('work','Corrigindo o formato…');
+    j=await sample.json(promptLivre(exame,ind,ditado,String(e1.message||e1),JSON.stringify(j)),{...opts,cache:false});
+    try{show(montarLivre(ind,j),'Gerado pelo ditado');setStatus('ok','Formato RIS validado. Exame sem máscara no motor: confira se todos os compartimentos estão no laudo.');}catch(e2){setStatus('err','Formato recusado: '+(e2.message||e2)+'. Tente de novo.');}
+   }
+  }catch(e){erroIA(e);}
+  finally{$('btn-ia').disabled=!sample;$('btn-parar').classList.add('hidden');}
+ }
+ function erroIA(e){
+  const c=e&&e.code;
+  if(c==='cancelled')setStatus('work','Parado.');
+  else if(c==='network')setStatus('err','Não consegui falar com a API. Esta rede pode estar bloqueando o acesso.');
+  else if(c==='invalid_key')setStatus('err','Chave da API recusada. Confira a chave.');
+    else if(c==='rate_limited')setStatus('err','Limite de uso atingido. Espere um pouco e tente de novo.');
+  else if(c==='invalid_json')setStatus('err','A IA não devolveu um formato válido. Tente de novo.');
+  else setStatus('err','Falha na IA ('+(c||'erro')+'). Tente de novo.');
+ }
+ async function gerarIA(){
+  if($('rota').value==='livre'){if(core&&sample)return gerarLivre();return;}
+  if(!core||!sample)return;
+  const ditado=$('ditado').value.trim();
+  if(!ditado){setStatus('err','Dite ou escreva os achados primeiro.');return;}
+  let q,m;
+  try{q=baseQuery();m=mascara(q);}catch(e){setStatus('err','Bloqueado pelo motor: '+msgErro(e)+'.');return;}
+  ctl=new AbortController();
+  $('btn-ia').disabled=true;$('btn-parar').classList.remove('hidden');
+  setStatus('work','Pensando…');
+  const opts={signal:ctl.signal,modelTier:'default',onText:()=>setStatus('work','Escrevendo o laudo…')};
+  let j=null;
+  try{
+   j=await sample.json(prompt(q,m,ditado),opts);
+   try{show(montar(q,j),'Gerado pelo ditado');}
+   catch(e1){
+    setStatus('work','Corrigindo pelo motor…');
+    j=await sample.json(prompt(q,m,ditado,msgErro(e1),JSON.stringify(j)),{...opts,cache:false});
+    try{show(montar(q,j),'Gerado pelo ditado');}catch(e2){setStatus('err','Bloqueado pelo motor: '+msgErro(e2)+'. Ajuste o ditado e tente de novo.');}
+   }
+  }catch(e){erroIA(e);
+  }finally{$('btn-ia').disabled=!sample;$('btn-parar').classList.add('hidden');}
+ }
+ function iaOff(){sample=null;$('btn-ia').disabled=true;const c=$('ia-chip');c.classList.remove('on');c.textContent='IA desligada: falta a chave';}
+ $('btn-ia').addEventListener('click',gerarIA);
+ $('btn-parar').addEventListener('click',()=>ctl&&ctl.abort());
+ const EXEMPLO={route:'abdomen-full',id:'exemplo',indication:'dor abdominal.',changes:[{start:5,count:1,kind:'finding',support:'ditado: apêndice com calibre aumentado e densificação da gordura',blocks:[{text:'Alças intestinais com calibre preservado, sem sinais de obstrução.',positive:false,highlights:[]},{text:'Apêndice cecal com calibre aumentado, associado a densificação da gordura periapendicular, achados compatíveis com apendicite aguda não complicada. Não se observam sinais de perfuração, coleções ou líquido livre significativo.',positive:true,highlights:['Apêndice cecal com calibre aumentado, associado a densificação da gordura periapendicular, achados compatíveis com apendicite aguda não complicada.']}]}],conclusion:['Achados tomográficos compatíveis com apendicite aguda não complicada.']};
+ function exemplo(){
+  if(!core)return;
+  $('rota').value='abdomen-full';$('indicacao').value='dor abdominal.';
+  $('ditado').value='Apêndice com calibre aumentado e densificação da gordura periapendicular, apendicite aguda não complicada.';
+  syncFields();
+  try{show(core.renderPositive(EXEMPLO),'Exemplo');}catch(e){setStatus('err','Bloqueado pelo motor: '+msgErro(e)+'.');}
+ }
+ $('btn-exemplo').addEventListener('click',exemplo);
  function flash(b,t){const o=b.textContent;b.textContent=t;setTimeout(()=>b.textContent=o,1500);}
  function fallbackCopy(node){const r=document.createRange();r.selectNodeContents(node);const s=getSelection();s.removeAllRanges();s.addRange(r);try{document.execCommand('copy');}catch(e){}s.removeAllRanges();}
  $('btn-html').addEventListener('click',()=>{
@@ -1192,8 +1392,45 @@ return Object.freeze({...api,...createClinicalEntry(api)});
    navigator.clipboard.write([item]).then(()=>flash(b,'Copiado')).catch(()=>{fallbackCopy($('preview'));flash(b,'Copiado');});
   }catch(e){fallbackCopy($('preview'));flash(b,'Copiado');}
  });
+ // IA pela API: o navegador fala direto com api.anthropic.com usando a chave do usuário. Sem servidor intermediário.
+ const API_URL='https://api.anthropic.com/v1/messages';
+ const MODELOS={rapido:'claude-sonnet-5-5',caprichado:'claude-opus-5-5'};
+ function extrairJSON(t){
+  t=String(t||'').trim();
+  try{return JSON.parse(t);}catch(e){}
+  const f=t.match(/```(?:json)?\s*([\s\S]*?)```/);if(f){try{return JSON.parse(f[1]);}catch(e){}}
+  const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a>=0&&b>a){try{return JSON.parse(t.slice(a,b+1));}catch(e){}}
+  throw {code:'invalid_json'};
+ }
+ function apiCliente(key){
+  return {json:async(prompt,opts={})=>{
+   let r;
+   try{
+    r=await fetch(API_URL,{method:'POST',signal:opts.signal,headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+     body:JSON.stringify({model:MODELOS[$('modelo').value]||MODELOS.rapido,max_tokens:4000,messages:[{role:'user',content:prompt+'\n\nResponda apenas com o JSON pedido.'}]})});
+   }catch(e){if(e&&e.name==='AbortError')throw {code:'cancelled'};throw {code:'network'};}
+   if(r.status===401||r.status===403)throw {code:'invalid_key'};
+   if(r.status===429||r.status===529)throw {code:'rate_limited'};
+   if(!r.ok)throw {code:'upstream_error',status:r.status};
+   const d=await r.json();
+   const txt=(d.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+   opts.onText&&opts.onText({text:txt,delta:txt});
+   return extrairJSON(txt);
+  }};
+ }
+ function lerChave(){try{return localStorage.getItem('lalbucas-chave')||'';}catch(e){return '';}}
+ function ligarIA(){
+  const k=$('api-key').value.trim();
+  try{if($('api-lembrar').checked&&k)localStorage.setItem('lalbucas-chave',k);else localStorage.removeItem('lalbucas-chave');}catch(e){}
+  if(!k){iaOff();return;}
+  sample=apiCliente(k);$('btn-ia').disabled=false;const c=$('ia-chip');c.classList.add('on');c.textContent='IA ligada';
+ }
+ $('api-key').addEventListener('input',ligarIA);
+ $('api-lembrar').addEventListener('change',ligarIA);
  syncFields();
- gerar();
+ exemplo();
+ $('api-key').value=lerChave();$('api-lembrar').checked=!!lerChave();
+ ligarIA();
 })();
 </script>
 </body>
