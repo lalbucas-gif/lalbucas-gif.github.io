@@ -1,0 +1,51 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#09090f"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Karamázov · Protótipo</title>
+<link rel="stylesheet" href="app.css"><link rel="icon" href="https://karamazov.grok.me/apple-touch-icon.png"><link rel="apple-touch-icon" href="https://karamazov.grok.me/apple-touch-icon.png">
+</head><body>
+<div id="aura"></div><div id="aura2"></div>
+<header id="top">
+  <button id="chBtn" class="chbtn"><span id="chLbl">Carregando…</span><b id="chTitle"></b></button>
+  <button id="treeBtn" class="ib" aria-label="Árvore da família"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.6"/><circle cx="5" cy="19" r="2.6"/><circle cx="12" cy="19" r="2.6"/><circle cx="19" cy="19" r="2.6"/><path d="M12 7.6v4.4M5 16.4V12h14v4.4M12 12v4.4"/></svg></button>
+  <button id="hlBtn" class="ib" aria-label="Trechos salvos"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg><i id="hlCount"></i></button>
+</header>
+<div id="cast"></div>
+<main id="stage">
+  <section id="focus"></section>
+  <section id="full" class="off"></section>
+</main>
+<div id="cardLayer"></div>
+<footer id="dock">
+  <div id="bar"><div id="track"></div><div id="ticks"></div><div id="fill"></div><div id="knob"></div></div>
+  <div class="times"><span id="tCur">0:00</span><span id="tSent"></span><span id="tLeft">-0:00</span></div>
+  <div class="ctrls">
+    <button id="modeBtn" class="pill"><span id="modeLbl">Texto</span></button>
+    <button id="back" class="rb" aria-label="Voltar 15s"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 3v4h4"/></svg><small>15</small></button>
+    <button id="play" class="play" aria-label="Tocar"><svg id="icPlay" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg><svg id="icPause" viewBox="0 0 24 24" style="display:none"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg></button>
+    <button id="fwd" class="rb" aria-label="Avançar 15s"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v4h-4"/></svg><small>15</small></button>
+    <button id="spd" class="pill">1×</button>
+  </div>
+</footer>
+<div id="scrim"></div>
+<section class="sheet" id="recap"><div class="grab"></div><div id="recapBody"></div></section>
+<section class="sheet" id="tree"><div class="grab"></div>
+  <div class="sh-h"><h2>Árvore da família</h2><span id="treeCount"></span></div>
+  <p class="sh-sub">Só acende quem você já conheceu. Sem spoilers.</p>
+  <svg id="treeSvg" viewBox="0 0 360 470"></svg>
+  <div id="treeInfo" class="tinfo">Toque num personagem.</div>
+</section>
+<section class="sheet" id="hls"><div class="grab"></div>
+  <div class="sh-h"><h2>Trechos salvos</h2></div>
+  <p class="sh-sub">Segure uma frase para salvar. Toque aqui para voltar a ela.</p>
+  <div id="hlList"></div>
+</section>
+<section class="sheet" id="chs"><div class="grab"></div>
+  <div class="sh-h"><h2>Capítulos do protótipo</h2></div>
+  <div id="chList"></div>
+</section>
+<div id="toast"></div>
+<audio id="au" preload="metadata" playsinline></audio>
+<script src="app.js"></script>
+</body></html>
