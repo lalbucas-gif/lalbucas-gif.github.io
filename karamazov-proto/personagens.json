@@ -1,0 +1,277 @@
+[
+{
+"id": "fiodor",
+"n": "Fiódor Pávlovitch",
+"i": "FP",
+"c": "#FF5A47",
+"tok": [
+"Fiódor",
+"Pávlovitch"
+],
+"aka": "o pai · “o velho”",
+"w": "O pai. Proprietário de terras esperto com dinheiro, bufão e libertino."
+},
+{
+"id": "adelaida",
+"n": "Adelaída Ivánovna",
+"i": "AI",
+"c": "#F29BC4",
+"tok": [
+"Adelaída"
+],
+"aka": "1ª esposa · da família Miússov",
+"w": "Primeira esposa de Fiódor e mãe de Mítia. Rica, impulsiva, romântica."
+},
+{
+"id": "sofia",
+"n": "Sófia Ivánovna",
+"i": "SI",
+"c": "#9FD8FF",
+"tok": [
+"Sófia"
+],
+"aka": "2ª esposa",
+"w": "Segunda esposa de Fiódor, mãe de Ivan e Aliócha. Órfã, frágil, devota."
+},
+{
+"id": "dmitri",
+"n": "Mítia",
+"i": "Mi",
+"c": "#FF9F3D",
+"tok": [
+"Dmítri",
+"Mítia",
+"Mítka",
+"Mitienka",
+"Mitka"
+],
+"aka": "Dmítri Fiódorovitch · Mítka",
+"w": "O filho mais velho. Ex-oficial, impetuoso, passional, sempre sem dinheiro."
+},
+{
+"id": "ivan",
+"n": "Ivan",
+"i": "Iv",
+"c": "#4F8EFF",
+"tok": [
+"Ivan",
+"Vánia",
+"Vânia",
+"Vanka"
+],
+"aka": "Ivan Fiódorovitch · Vánia",
+"w": "O filho do meio. Intelectual brilhante, frio e cético."
+},
+{
+"id": "alyosha",
+"n": "Aliócha",
+"i": "Al",
+"c": "#3DDC97",
+"tok": [
+"Aliócha",
+"Aliôcha",
+"Aliôchka",
+"Aliochka",
+"Alekssêi",
+"Alexssêi",
+"Alekssêizinho",
+"Liócha"
+],
+"aka": "Alekssêi Fiódorovitch · Liócha · Aliôchka",
+"w": "O caçula. Noviço no mosteiro, bondoso — o herói do livro."
+},
+{
+"id": "smerd",
+"n": "Smierdiakóv",
+"i": "Sm",
+"c": "#A98BFF",
+"tok": [
+"Smierdiakóv"
+],
+"aka": "Pável Fiódorovitch · o cozinheiro",
+"w": "Criado e cozinheiro de Fiódor. Calado, estranho, epiléptico."
+},
+{
+"id": "grigori",
+"n": "Grigóri",
+"i": "Gr",
+"c": "#B5C48F",
+"tok": [
+"Grigóri"
+],
+"aka": "Grigóri Vassílievitch",
+"w": "Velho criado fiel de Fiódor; foi quem cuidou dos meninos."
+},
+{
+"id": "marfa",
+"n": "Márfa",
+"i": "Ma",
+"c": "#D6AE84",
+"tok": [
+"Márfa"
+],
+"aka": "Márfa Ignátievna",
+"w": "Esposa de Grigóri, criada da casa."
+},
+{
+"id": "grush",
+"n": "Grúchenka",
+"i": "Gk",
+"c": "#FF4FA8",
+"tok": [
+"Grúchenka",
+"Grúchka",
+"Agrafiêna",
+"Grúcha"
+],
+"aka": "Agrafiêna Alekssándrovna",
+"w": "Mulher sedutora da cidade. Pai e filho, Fiódor e Mítia, disputam por ela."
+},
+{
+"id": "katia",
+"n": "Katierína Ivánovna",
+"i": "KI",
+"c": "#F5C542",
+"tok": [
+"Katierína",
+"Kátia",
+"Katerina"
+],
+"aka": "Kátia",
+"w": "Noiva de Mítia. Orgulhosa, altiva, filha de um coronel."
+},
+{
+"id": "zossima",
+"n": "Zóssima",
+"i": "Zo",
+"c": "#FFF0BE",
+"tok": [
+"Zóssima"
+],
+"aka": "o ancião · stárets",
+"w": "O ancião do mosteiro, venerado pelo povo. Mentor de Aliócha."
+},
+{
+"id": "miusov",
+"n": "Miússov",
+"i": "Mü",
+"c": "#7FD8CB",
+"tok": [
+"Miússov"
+],
+"aka": "Piôtr Alekssándrovitch",
+"w": "Primo de Adelaída. Liberal ocidentalizado, rico e vaidoso."
+},
+{
+"id": "rakitin",
+"n": "Rakítin",
+"i": "Ra",
+"c": "#C2E35A",
+"tok": [
+"Rakítin"
+],
+"aka": "o seminarista",
+"w": "Seminarista ambicioso e cínico, “amigo” de Aliócha."
+},
+{
+"id": "khokh",
+"n": "Rorlakôva",
+"i": "Ro",
+"c": "#FFB59E",
+"tok": [
+"Rorlakôva"
+],
+"aka": "Madame Rorlakôva",
+"w": "Senhora rica e tagarela, admiradora de Zóssima."
+},
+{
+"id": "lise",
+"n": "Lize",
+"i": "Li",
+"c": "#FF8FD0",
+"tok": [
+"Lize"
+],
+"aka": "filha de Rorlakôva",
+"w": "Filha adolescente de Rorlakôva, travessa, numa cadeira de rodas."
+},
+{
+"id": "ferapont",
+"n": "Padre Ferapônt",
+"i": "Fe",
+"c": "#B0A8A0",
+"tok": [
+"Ferapônt"
+],
+"aka": "o asceta",
+"w": "Monge asceta e rígido, inimigo de Zóssima."
+},
+{
+"id": "paissi",
+"n": "Padre Paíssi",
+"i": "Pa",
+"c": "#C9BEFF",
+"tok": [
+"Paíssi"
+],
+"aka": "monge",
+"w": "Monge erudito do mosteiro, próximo de Zóssima."
+},
+{
+"id": "lizavieta",
+"n": "Lizaviêta",
+"i": "Lz",
+"c": "#9AD0A8",
+"tok": [
+"Lizaviêta",
+"Lizaveta",
+"Smierdiáchtchaia"
+],
+"aka": "“a fedorenta”",
+"w": "Mendiga e “santa louca” da cidade."
+},
+{
+"id": "kalganov",
+"n": "Kalgánov",
+"i": "Ka",
+"c": "#8FB8FF",
+"tok": [
+"Kalgánov"
+],
+"aka": "parente de Miússov",
+"w": "Rapaz jovem e distraído, parente de Miússov."
+},
+{
+"id": "maksimov",
+"n": "Makssímov",
+"i": "Mk",
+"c": "#D9C27A",
+"tok": [
+"Makssímov"
+],
+"aka": "o velhinho",
+"w": "Velho proprietário bajulador que se junta à visita ao mosteiro."
+},
+{
+"id": "sneg",
+"n": "Sneguirióv",
+"i": "Sn",
+"c": "#9FA9B8",
+"tok": [
+"Sneguirióv"
+],
+"aka": "o capitão",
+"w": "Capitão reformado e pobre, humilhado em público."
+},
+{
+"id": "ilusha",
+"n": "Ilúcha",
+"i": "Il",
+"c": "#7FE0E8",
+"tok": [
+"Ilúcha"
+],
+"aka": "menino da escola",
+"w": "Menino doente e orgulhoso, filho de Sneguirióv."
+}
+]
