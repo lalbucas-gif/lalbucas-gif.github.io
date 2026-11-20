@@ -1,13 +1,20 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#09090f"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#07070b"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Karamázov · Protótipo</title>
-<link rel="stylesheet" href="app.css"><link rel="icon" href="https://karamazov.grok.me/apple-touch-icon.png"><link rel="apple-touch-icon" href="https://karamazov.grok.me/apple-touch-icon.png">
+<title>Karamázov</title>
+<meta name="robots" content="noindex">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Karamázov">
+<link rel="apple-touch-icon" sizes="180x180" href="https://karamazov.grok.me/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://karamazov.grok.me/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="app.css?v=6">
 </head><body>
 <div id="aura"></div><div id="aura2"></div>
 <header id="top">
   <button id="chBtn" class="chbtn"><span id="chLbl">Carregando…</span><b id="chTitle"></b></button>
+  <button id="fontBtn" class="ib" aria-label="Fonte e alinhamento"><span class="aa">Aa</span></button>
   <button id="treeBtn" class="ib" aria-label="Árvore da família"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.6"/><circle cx="5" cy="19" r="2.6"/><circle cx="12" cy="19" r="2.6"/><circle cx="19" cy="19" r="2.6"/><path d="M12 7.6v4.4M5 16.4V12h14v4.4M12 12v4.4"/></svg></button>
   <button id="hlBtn" class="ib" aria-label="Trechos salvos"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg><i id="hlCount"></i></button>
 </header>
@@ -35,6 +42,7 @@
   <p class="sh-sub">Só acende quem você já conheceu. Sem spoilers.</p>
   <svg id="treeSvg" viewBox="0 0 360 470"></svg>
   <div id="treeInfo" class="tinfo">Toque num personagem.</div>
+  <div id="treeMore"></div>
 </section>
 <section class="sheet" id="hls"><div class="grab"></div>
   <div class="sh-h"><h2>Trechos salvos</h2></div>
@@ -42,10 +50,14 @@
   <div id="hlList"></div>
 </section>
 <section class="sheet" id="chs"><div class="grab"></div>
-  <div class="sh-h"><h2>Capítulos do protótipo</h2></div>
+  <div class="sh-h"><h2>Capítulos</h2></div>
   <div id="chList"></div>
+</section>
+<section class="sheet" id="prefs"><div class="grab"></div>
+  <div class="sh-h"><h2>Leitura</h2></div>
+  <div id="prefBody"></div>
 </section>
 <div id="toast"></div>
 <audio id="au" preload="metadata" playsinline></audio>
-<script src="app.js"></script>
+<script src="app.js?v=6"></script>
 </body></html>
